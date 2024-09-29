@@ -1,3 +1,5 @@
+mod util;
+
 use std::convert::Infallible;
 use std::env;
 use std::net::SocketAddr;
@@ -7,9 +9,10 @@ use hyper::body::{Bytes, Incoming};
 use hyper::header::HeaderValue;
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
-use hyper::{Request, Response};
+use hyper::{Request, Response, StatusCode};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
+use util::get_response;
 
 
 
@@ -26,7 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         tokio::task::spawn(async move {
             if let Err(err) = http1::Builder::new()
                 // `service_fn` converts our function in a `Service`
-                .serve_connection(io, service_fn(hello))
+                .serve_connection(io, service_fn(handler))
                 .await
             {
                 eprintln!("Error serving connection: {:?}", err);
@@ -35,7 +38,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 }
 
-async fn handler(_: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
+async fn handler(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
+    // println!("Received request{:?}", req);
+    if req.uri().path() != "/" {
+        return Ok(get_response(Some(StatusCode::NOT_FOUND), None));
+    }
+    // get the download url from the request
+    let query = req.uri().query();
+    if query.is_none() {
+        return Ok(get_response(Some(StatusCode::BAD_REQUEST), Some("url must be provide in query!"))); 
+    }
+    println!("Download URL: {}", query.unwrap());
     let mut res = Response::new(Full::new(Bytes::from("Hello, World!")));
     res.headers_mut().append("Server", HeaderValue::from_static("Crane"));
     Ok(res)
