@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use http_body_util::Full;
 use hyper::{body::Bytes, Response, StatusCode};
 use url::form_urlencoded;
@@ -25,13 +23,35 @@ pub fn get_response(
         .unwrap()
 }
 
+/// extract a query param from the given query string
+/// # Arguments query_string: &str
+/// # Arguments param_name: &str
+/// # Returns Option<String>
+pub fn extract_query_param(query_string: &str, param_name: &str) -> Option<String> {
+    for (key, value) in form_urlencoded::parse(query_string.as_bytes()) {
+        if key == param_name {
+            return Some(value.into_owned());
+        }
+    }
+    None
+}
 
-// fn extract_query_param(query_string: &str, param_name: str) -> Option<&'a str> {
-//     let mut params: HashMap<&str, &str> = HashMap::new();
-//     for (key, value) in form_urlencoded::parse(query_string.as_bytes()) {
-//         params.insert(&key, &value);
-//     }
-//     params.get(param_name)
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
 
+    #[test]
+    fn test_extract_query_param() {
+        let encoded: String = form_urlencoded::Serializer::new(String::new())
+            .append_pair("url", "https://wycode.cn/download/dist.tar.gz")
+            .append_pair("name", "Yu Wang")
+            .finish();
+        assert_eq!(encoded, "url=https%3A%2F%2Fwycode.cn%2Fdownload%2Fdist.tar.gz&name=Yu+Wang");
 
+        let url = extract_query_param(&encoded, "url");
+        assert_eq!(url.unwrap(), "https://wycode.cn/download/dist.tar.gz");
+        
+        let name = extract_query_param(&encoded, "name");
+        assert_eq!(name.unwrap(), "Yu Wang");
+    }
+}

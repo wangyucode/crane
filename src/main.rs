@@ -12,7 +12,7 @@ use hyper::service::service_fn;
 use hyper::{Request, Response, StatusCode};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
-use util::get_response;
+use util::{extract_query_param, get_response};
 
 
 
@@ -48,7 +48,12 @@ async fn handler(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infall
     if query.is_none() {
         return Ok(get_response(Some(StatusCode::BAD_REQUEST), Some("url must be provide in query!"))); 
     }
-    println!("Download URL: {}", query.unwrap());
+    let url = extract_query_param(query.unwrap(), "url");
+    if url.is_none() {
+        return Ok(get_response(Some(StatusCode::BAD_REQUEST), Some("url must be provide in query!")));
+    }
+    
+    println!("Download URL: {}", url.unwrap());
     let mut res = Response::new(Full::new(Bytes::from("Hello, World!")));
     res.headers_mut().append("Server", HeaderValue::from_static("Crane"));
     Ok(res)
