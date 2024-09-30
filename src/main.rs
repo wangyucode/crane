@@ -1,15 +1,16 @@
 mod util;
 
 use std::convert::Infallible;
-use std::env;
+use std::{env, iter};
+use std::fmt::format;
 use std::net::SocketAddr;
 
-use http_body_util::Full;
-use hyper::body::{Bytes, Incoming};
-use hyper::header::HeaderValue;
+use http_body_util::combinators::{BoxBody, MapFrame};
+use http_body_util::{BodyExt, StreamBody};
+use hyper::body::{Body, Bytes, Frame, Incoming};
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
-use hyper::{Request, Response, StatusCode};
+use hyper::{Error, Request, Response, StatusCode};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 use util::{extract_query_param, get_response};
@@ -18,7 +19,7 @@ use util::{extract_query_param, get_response};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let port = env::var("PORT").unwrap_or("8080".to_string());
+    let port = env::var("PORT").unwrap_or("8594".to_string());
     let addr = SocketAddr::from(([0, 0, 0, 0], port.parse().unwrap()));
     let listener = TcpListener::bind(addr).await?;
     println!("Listening on port {}", addr);
@@ -38,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 }
 
-async fn handler(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
+async fn handler(req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, Infallible>>, Error> {
     // println!("Received request{:?}", req);
     if req.uri().path() != "/" {
         return Ok(get_response(Some(StatusCode::NOT_FOUND), None));
@@ -52,11 +53,18 @@ async fn handler(req: Request<Incoming>) -> Result<Response<Full<Bytes>>, Infall
     if url.is_none() {
         return Ok(get_response(Some(StatusCode::BAD_REQUEST), Some("url must be provide in query!")));
     }
+
+    let url = url.unwrap();
+    println!("Download URL: {}", url);
+
+    if !url.ends_with(".tar.gz") {
+        return Ok(get_response(Some(StatusCode::BAD_REQUEST), Some("url must be a tar.gz file!")));
+    }
     
-    println!("Download URL: {}", url.unwrap());
-    let mut res = Response::new(Full::new(Bytes::from("Hello, World!")));
-    res.headers_mut().append("Server", HeaderValue::from_static("Crane"));
-    Ok(res)
+    // Deployer::new(url, body).run().await;
+    
+    // Ok(Response::new(StreamBody::new().boxed()))
+    Ok(get_response(None, None))
 }
 
 

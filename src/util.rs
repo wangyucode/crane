@@ -1,4 +1,6 @@
-use http_body_util::Full;
+use std::convert::Infallible;
+
+use http_body_util::{combinators::BoxBody, BodyExt, Full};
 use hyper::{body::Bytes, Response, StatusCode};
 use url::form_urlencoded;
 
@@ -9,7 +11,7 @@ use url::form_urlencoded;
 pub fn get_response(
     status: Option<StatusCode>,
     body: Option<&'static str>,
-) -> Response<Full<Bytes>> {
+) -> Response<BoxBody<Bytes, Infallible>> {
     let status = status.unwrap_or(StatusCode::OK);
     let body_str = body.unwrap_or(status.canonical_reason().unwrap_or("Ok"));
     if !status.is_success() {
@@ -19,7 +21,7 @@ pub fn get_response(
     Response::builder()
         .header("Server", "Crane")
         .status(status)
-        .body(Full::new(Bytes::from(body_str)))
+        .body(Full::new(Bytes::from(body_str)).boxed())
         .unwrap()
 }
 
