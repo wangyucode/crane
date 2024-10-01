@@ -87,7 +87,7 @@ impl<'a> Deployer<'a> {
     }
 
     /// extract the downloaded file to target `path`
-    pub async fn deploy(&self, path: &str) -> Result<(), Error> {
+    pub async fn deploy(&self) -> Result<(), Error> {
         // open tar.gz file
         let filename = format!("/tmp/{}.tar.gz", self.timestamp);
         let file = std::fs::File::open(filename.as_str())?;
@@ -95,7 +95,7 @@ impl<'a> Deployer<'a> {
         let gzip_decoder = GzipDecoder::new(file_stream)?;
         let mut tar_archive = TarArchive::new(gzip_decoder);
         self.sender.send(format!("unpack {}\r\n", filename)).await?;
-        tar_archive.unpack(path)?;
+        tar_archive.unpack("/dist/")?;
         self.sender.send("unpack success!\r\n".to_string()).await?;
         Ok(())
     }

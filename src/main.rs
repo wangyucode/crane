@@ -22,8 +22,7 @@ use futures::stream::StreamExt;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     env::var("API_KEY").expect("API_KEY must be set");
-    let port = env::var("PORT").unwrap_or("8594".to_string());
-    let addr = SocketAddr::from(([0, 0, 0, 0], port.parse().unwrap()));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8594));
     let listener = TcpListener::bind(addr).await?;
     println!("Listening on port {}", addr);
 
@@ -80,17 +79,9 @@ async fn handler(req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, Infal
             Some("url must be provide in query!"),
         ));
     }
-    let path = extract_query_param(query, "path");
-    if path.is_none() {
-        return Ok(get_response(
-            Some(StatusCode::BAD_REQUEST),
-            Some("path must be provide in query!"),
-        ));
-    }
 
     let url = url.unwrap();
-    let path = path.unwrap();
-    println!("Download URL: {}, Deploy path: {}", url, path);
+    println!("Download URL: {}", url);
 
     if !url.ends_with(".tar.gz") {
         return Ok(get_response(
@@ -114,7 +105,7 @@ async fn handler(req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, Infal
                 eprintln!("{}", wtf);
             };
         }
-        if let Err(e) = deployer.deploy(&path).await{
+        if let Err(e) = deployer.deploy().await{
             let error = format!("Deploy error: {:?}", e);
             eprintln!("{}", error);
             if let Err(wtf) = tx.send(error).await{
