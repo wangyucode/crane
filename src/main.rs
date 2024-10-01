@@ -54,16 +54,25 @@ async fn handler(req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, Infal
             Some("url must be provide in query!"),
         ));
     }
-    let url = extract_query_param(query.unwrap(), "url");
+    let query = query.unwrap();
+    let url = extract_query_param(query, "url");
     if url.is_none() {
         return Ok(get_response(
             Some(StatusCode::BAD_REQUEST),
             Some("url must be provide in query!"),
         ));
     }
+    let path = extract_query_param(query, "path");
+    if path.is_none() {
+        return Ok(get_response(
+            Some(StatusCode::BAD_REQUEST),
+            Some("path must be provide in query!"),
+        ));
+    }
 
     let url = url.unwrap();
-    println!("Download URL: {}", url);
+    let path = path.unwrap();
+    println!("Download URL: {}, Deploy path: {}", url, path);
 
     if !url.ends_with(".tar.gz") {
         return Ok(get_response(
@@ -79,9 +88,20 @@ async fn handler(req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, Infal
     });
 
     tokio::spawn(async move {
-        let deployer = Deployer::new(tx);
+        let deployer = Deployer::new(&tx);
         if let Err(e) = deployer.download(&url).await {
-            eprintln!("Download error: {:?}", e);
+            let error = format!("Download error: {:?}", e);
+            eprintln!("{}", error);
+            if let Err(wtf) = tx.send(error).await{
+                eprintln!("{}", wtf);
+            };
+        }
+        if let Err(e) = deployer.deploy(&path).await{
+            let error = format!("Deploy error: {:?}", e);
+            eprintln!("{}", error);
+            if let Err(wtf) = tx.send(error).await{
+                eprintln!("{}", wtf);
+            }
         }
     });
 

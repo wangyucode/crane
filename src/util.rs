@@ -3,6 +3,8 @@ use std::convert::Infallible;
 use http_body_util::{combinators::BoxBody, BodyExt, Full};
 use hyper::{body::Bytes, Response, StatusCode};
 use url::form_urlencoded;
+use libflate::gzip::Decoder as GzipDecoder;
+use tar::{Archive as TarArchive, EntryType as TarEntryType};
 
 /// return a response with the given code and body
 /// # Arguments status: Option<StatusCode>
@@ -46,14 +48,14 @@ mod tests {
     fn test_extract_query_param() {
         let encoded: String = form_urlencoded::Serializer::new(String::new())
             .append_pair("url", "https://wycode.cn/download/dist.tar.gz")
-            .append_pair("name", "Yu Wang")
+            .append_pair("path", "/app/data/")
             .finish();
-        assert_eq!(encoded, "url=https%3A%2F%2Fwycode.cn%2Fdownload%2Fdist.tar.gz&name=Yu+Wang");
+        assert_eq!(encoded, "url=https%3A%2F%2Fwycode.cn%2Fdownload%2Fdist.tar.gz&path=%2Fapp%2Fdata%2F");
 
         let url = extract_query_param(&encoded, "url");
         assert_eq!(url.unwrap(), "https://wycode.cn/download/dist.tar.gz");
         
-        let name = extract_query_param(&encoded, "name");
-        assert_eq!(name.unwrap(), "Yu Wang");
+        let name = extract_query_param(&encoded, "path");
+        assert_eq!(name.unwrap(), "/app/data/");
     }
 }
