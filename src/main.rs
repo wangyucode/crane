@@ -1,21 +1,25 @@
 mod util;
 
 use std::convert::Infallible;
-use std::{env, iter};
-use std::fmt::format;
+use std::fmt::{format, Debug};
 use std::net::SocketAddr;
+use std::time::Duration;
+use std::{env, iter};
 
+use async_stream::stream;
 use http_body_util::combinators::{BoxBody, MapFrame};
-use http_body_util::{BodyExt, StreamBody};
+use http_body_util::{BodyExt, BodyStream, Empty, Full, StreamBody};
 use hyper::body::{Body, Bytes, Frame, Incoming};
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Error, Request, Response, StatusCode};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
+use tokio::sync::mpsc;
+use tokio::time::sleep;
+use tokio_stream::wrappers::ReceiverStream;
 use util::{extract_query_param, get_response};
-
-
+use futures::stream::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -47,24 +51,65 @@ async fn handler(req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, Infal
     // get the download url from the request
     let query = req.uri().query();
     if query.is_none() {
-        return Ok(get_response(Some(StatusCode::BAD_REQUEST), Some("url must be provide in query!"))); 
+        return Ok(get_response(
+            Some(StatusCode::BAD_REQUEST),
+            Some("url must be provide in query!"),
+        ));
     }
     let url = extract_query_param(query.unwrap(), "url");
     if url.is_none() {
-        return Ok(get_response(Some(StatusCode::BAD_REQUEST), Some("url must be provide in query!")));
+        return Ok(get_response(
+            Some(StatusCode::BAD_REQUEST),
+            Some("url must be provide in query!"),
+        ));
     }
 
     let url = url.unwrap();
     println!("Download URL: {}", url);
 
     if !url.ends_with(".tar.gz") {
-        return Ok(get_response(Some(StatusCode::BAD_REQUEST), Some("url must be a tar.gz file!")));
+        return Ok(get_response(
+            Some(StatusCode::BAD_REQUEST),
+            Some("url must be a tar.gz file!"),
+        ));
     }
-    
-    // Deployer::new(url, body).run().await;
-    
-    // Ok(Response::new(StreamBody::new().boxed()))
-    Ok(get_response(None, None))
+
+    // Create a channel to send progress updates
+    let (tx, rx) = mpsc::channel(2);
+    let stream = ReceiverStream::new(rx).map(|frame| {
+        Ok(Frame::data(Bytes::from(format!("{}", frame))))
+    });
+
+    tokio::spawn(async move {
+        // let deployer = Deployer::new();
+        // if let Err(e) = deployer.download(url, tx).await {
+        //     eprintln!("Download error: {:?}", e);
+        // }
+
+        let messages = vec![  
+            "Hello, this is the first chunk!\r\n".to_string(),  
+            "Here is the second chunk!\r\n".to_string(),  
+            "And here is the third chunk!\r\n".to_string(),  
+            // Add more messages as needed  
+        ];
+
+        for message in messages {
+            tx.send(message).await.unwrap();
+            sleep(Duration::from_secs(1)).await;
+        }
+
+    });
+
+    let body = BoxBody::new(StreamBody::new(stream));
+
+    let response = Response::builder()
+        .header("Server", "Crane")
+        .header("Content-Type", "text/plain; charset=utf-8")
+        .header("Transfer-Encoding", "chunked")
+        .body(body)
+        .unwrap();
+
+    // Deployer::new().download(url, body).await;
+
+    Ok(response)
 }
-
-
