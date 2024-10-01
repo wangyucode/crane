@@ -10,5 +10,4 @@ http-body-util = "0.1"
 hyper-util = { version = "0.1", features = ["full"] }
 url = "2"
 tokio-stream = "0.1"
-async-stream = "0.3.5"
 futures = "0.3.30"

@@ -1,22 +1,20 @@
 mod util;
+mod deployer;
 
 use std::convert::Infallible;
-use std::fmt::{format, Debug};
 use std::net::SocketAddr;
-use std::time::Duration;
-use std::{env, iter};
+use std::env;
 
-use async_stream::stream;
-use http_body_util::combinators::{BoxBody, MapFrame};
-use http_body_util::{BodyExt, BodyStream, Empty, Full, StreamBody};
-use hyper::body::{Body, Bytes, Frame, Incoming};
+use deployer::Deployer;
+use http_body_util::combinators::BoxBody;
+use http_body_util::StreamBody;
+use hyper::body::{Bytes, Frame, Incoming};
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Error, Request, Response, StatusCode};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
-use tokio::time::sleep;
 use tokio_stream::wrappers::ReceiverStream;
 use util::{extract_query_param, get_response};
 use futures::stream::StreamExt;
@@ -81,23 +79,10 @@ async fn handler(req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, Infal
     });
 
     tokio::spawn(async move {
-        // let deployer = Deployer::new();
-        // if let Err(e) = deployer.download(url, tx).await {
-        //     eprintln!("Download error: {:?}", e);
-        // }
-
-        let messages = vec![  
-            "Hello, this is the first chunk!\r\n".to_string(),  
-            "Here is the second chunk!\r\n".to_string(),  
-            "And here is the third chunk!\r\n".to_string(),  
-            // Add more messages as needed  
-        ];
-
-        for message in messages {
-            tx.send(message).await.unwrap();
-            sleep(Duration::from_secs(1)).await;
+        let deployer = Deployer::new(tx);
+        if let Err(e) = deployer.download(&url).await {
+            eprintln!("Download error: {:?}", e);
         }
-
     });
 
     let body = BoxBody::new(StreamBody::new(stream));
@@ -109,7 +94,6 @@ async fn handler(req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, Infal
         .body(body)
         .unwrap();
 
-    // Deployer::new().download(url, body).await;
 
     Ok(response)
 }
