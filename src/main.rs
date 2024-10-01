@@ -21,6 +21,7 @@ use futures::stream::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    env::var("API_KEY").expect("API_KEY must be set");
     let port = env::var("PORT").unwrap_or("8594".to_string());
     let addr = SocketAddr::from(([0, 0, 0, 0], port.parse().unwrap()));
     let listener = TcpListener::bind(addr).await?;
@@ -45,6 +46,23 @@ async fn handler(req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, Infal
     // println!("Received request{:?}", req);
     if req.uri().path() != "/" {
         return Ok(get_response(Some(StatusCode::NOT_FOUND), None));
+    }
+    let key = req.headers().get("X-Api-Key");
+    if key.is_none(){
+        return Ok(get_response(
+            Some(StatusCode::UNAUTHORIZED),
+            Some("X-Api-Key is required!"),
+        ));
+    }
+    let key = key.unwrap();
+    match key.to_str().unwrap() != env::var("API_KEY").unwrap() {
+        true => {
+            return Ok(get_response(
+                Some(StatusCode::UNAUTHORIZED),
+                Some("Invalid API key!"),
+            ));
+        }
+        false => (),
     }
     // get the download url from the request
     let query = req.uri().query();

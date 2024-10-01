@@ -82,7 +82,7 @@ impl<'a> Deployer<'a> {
         // flush and close the stream
         file_stream.shutdown().await?;
         // send success message
-        self.sender.send("Download success!".to_string()).await?;
+        self.sender.send("Download success!\r\n".to_string()).await?;
         Ok(())
     }
 
@@ -93,10 +93,10 @@ impl<'a> Deployer<'a> {
         let file = std::fs::File::open(filename.as_str())?;
         let file_stream = std::io::BufReader::new(file);
         let gzip_decoder = GzipDecoder::new(file_stream)?;
-        let mut tar_achive = TarArchive::new(gzip_decoder);
-        self.sender.send(format!("unpack {}", filename)).await?;
-        tar_achive.unpack(path)?;
-        self.sender.send("unpack success!".to_string()).await?;
+        let mut tar_archive = TarArchive::new(gzip_decoder);
+        self.sender.send(format!("unpack {}\r\n", filename)).await?;
+        tar_archive.unpack(path)?;
+        self.sender.send("unpack success!\r\n".to_string()).await?;
         Ok(())
     }
 }
