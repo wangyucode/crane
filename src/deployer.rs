@@ -1,16 +1,20 @@
-use std::{ path::Path, str::FromStr, time::{SystemTime, UNIX_EPOCH}};
+use std::{
+    str::FromStr,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use anyhow::Error;
-use futures::StreamExt;
-use http_body_util::{BodyExt, BodyStream, Empty};
+use http_body_util::{BodyExt, Empty};
 use hyper::{body::Bytes, header::HeaderValue, Uri};
 use hyper_tls::HttpsConnector;
 use hyper_util::{client::legacy::Client, rt::TokioExecutor};
 use libflate::gzip::Decoder as GzipDecoder;
+use tar::Archive as TarArchive;
 use tokio::{
-    fs::{create_dir_all, File}, io::{AsyncWriteExt, BufReader, BufStream, BufWriter}, sync::mpsc::Sender
+    fs::{create_dir_all, File},
+    io::{AsyncWriteExt, BufWriter},
+    sync::mpsc::Sender,
 };
-use tar::{Archive as TarArchive, EntryType as TarEntryType};
 
 pub struct Deployer<'a> {
     pub sender: &'a Sender<String>,
@@ -38,8 +42,6 @@ impl<'a> Deployer<'a> {
             return Err(Error::msg(res.status()));
         }
 
-        
-
         // total size of the body
         let total_size = res
             .headers()
@@ -53,7 +55,7 @@ impl<'a> Deployer<'a> {
                 total_size
             ))
             .await?;
-       
+
         let mut read_so_far = 0;
         // create the file
         let filename = format!("/tmp/{}.tar.gz", self.timestamp);
@@ -67,7 +69,7 @@ impl<'a> Deployer<'a> {
             let frame = next?;
             if let Some(chunk) = frame.data_ref() {
                 file_stream.write_all(chunk).await?;
-                
+
                 // update the progress
                 read_so_far += chunk.len();
                 let progress = format!(
@@ -86,13 +88,15 @@ impl<'a> Deployer<'a> {
 
     /// extract the downloaded file to target `path`
     pub async fn deploy(&self, path: &str) -> Result<(), Error> {
-        // source tar.gz file
+        // open tar.gz file
         let filename = format!("/tmp/{}.tar.gz", self.timestamp);
-        let file = File::open(filename).await?;
-        let file_stream = Stream::new(file.lines());
-        
-        let gzip_decoder = GzipDecoder::new(file_stream);
-        
+        let file = std::fs::File::open(filename.as_str())?;
+        let file_stream = std::io::BufReader::new(file);
+        let gzip_decoder = GzipDecoder::new(file_stream)?;
+        let mut tar_achive = TarArchive::new(gzip_decoder);
+        self.sender.send(format!("unpack {}", filename)).await?;
+        tar_achive.unpack(path)?;
+        self.sender.send("unpack success!".to_string()).await?;
         Ok(())
     }
 }

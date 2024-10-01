@@ -3,8 +3,6 @@ use std::convert::Infallible;
 use http_body_util::{combinators::BoxBody, BodyExt, Full};
 use hyper::{body::Bytes, Response, StatusCode};
 use url::form_urlencoded;
-use libflate::gzip::Decoder as GzipDecoder;
-use tar::{Archive as TarArchive, EntryType as TarEntryType};
 
 /// return a response with the given code and body
 /// # Arguments status: Option<StatusCode>
