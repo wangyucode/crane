@@ -2,14 +2,16 @@
 
 ![Crane](logo.jpg)
 
+English | [简体中文](README_Zh-CN.md)
+
 Crane is a simple, fast, and secure tool write in Rust for downloading and deploying your `.tar.gz` archive files without the need for server passwords or keys. It was designed to provide a quick and convenient way to deploy your software or files to a server without the usual complexities of authentication and authorization.
 
 ## Features
-1. Fast Written in Rust's most basic libraries, **Crane** offers a lightweight binary size of just 3MB and a Docker image of only 88MB, ensuring quick and efficient deployment.
+1. **Fast:** Written in Rust, **Crane** offers a lightweight binary size of just 3MB and a Docker image of only 88MB, ensuring quick and efficient deployment.
 
-2. Simple With a single GET request, Crane can download and unzip your .tar.gz file, making the deployment process effortless.
+2. **Simple:** With a single GET request, Crane can download and unzip your `.tar.gz` file, making the deployment process effortless.
 
-3. Secure Crane operates without the need for server credentials or keys, providing an additional layer of security. Its API supports API keys for protection, and it ensures that files are only written to the specified path, preventing unauthorized access.
+3. **Secure:** Crane operates without the need for server credentials or keys, providing an additional layer of security. Its API supports API keys for protection, and it ensures that files are only written to the specified path, preventing unauthorized access.
 
 ## Installation
 
@@ -63,3 +65,8 @@ jobs:
 ```
 
 > **Waring**: API_KEY is required, if not set, Crane will not start. and please set it as a strong secret.
+
+### TODO list
+
+- [ ] Cancel last deployment when new deployment is triggered.
+- [ ] Support options, override flag.
