@@ -1,11 +1,10 @@
-FROM rust:1.81-bullseye AS builder
-WORKDIR /app
+FROM rust:1.81 as builder
+WORKDIR /usr/src/crane
 COPY . .
-RUN cargo build --release
+RUN cargo install --path .
 
-
-FROM scratch
-WORKDIR /app
-COPY --from=builder /app/target/release/crane .
+FROM debian:bullseye-slim
+RUN apt-get update && apt-get install ca-certificates && apt-get clean
+COPY --from=builder /usr/local/cargo/bin/crane /usr/local/bin/crane
 EXPOSE 8594
-CMD ["./crane"]
+CMD ["crane"]

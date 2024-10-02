@@ -19,7 +19,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use util::{extract_query_param, get_response};
 use futures::stream::StreamExt;
 
-#[tokio::main]
+#[actix_web::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     env::var("API_KEY").expect("API_KEY must be set");
     let addr = SocketAddr::from(([0, 0, 0, 0], 8594));
