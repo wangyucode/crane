@@ -9,7 +9,12 @@
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}",
-            "environment": [],
+            "environment": [
+                {
+                    "name": "API_KEY",
+                    "value": "456"
+                }
+            ],
             "externalConsole": true
         }
     ]
