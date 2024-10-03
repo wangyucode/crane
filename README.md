@@ -9,7 +9,7 @@
 Crane is a simple, fast, and secure tool written in Rust for downloading and deploying your `.tar.gz` archive files without the need for server passwords or keys.
 
 ## Features
-1. **Fast:** Written in Rust, **Crane** offers a lightweight binary size of just 3MB and a Docker image of only 88MB, ensuring quick and efficient deployment.
+1. **Fast:** Written in Rust, **Crane** offers a lightweight binary size of just 3MB and a Docker image of only 34MB, ensuring quick and efficient deployment.
 
 2. **Simple:** With a single GET request, Crane can download and unzip your `.tar.gz` file, making the deployment process effortless.
 
