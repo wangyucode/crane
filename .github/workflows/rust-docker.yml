@@ -41,7 +41,7 @@ jobs:
       - name: Extract version from Cargo.toml
         id: extract_version
         run: |
-          version=$(awk -F= '/^version/ {print $2}' Cargo.toml | tr -d '"')
+          version=$(awk -F= '/^version/ {print $2}' Cargo.toml | tr -d '"' | tr -d ' ')
           echo "Version: $version"
           echo "::set-output name=version::$version"
       - name: Build and push Docker image
