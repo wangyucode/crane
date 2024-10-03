@@ -1,0 +1,52 @@
+name: Rust and Docker Workflow
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+jobs:
+  cargo-test:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+  docker-build-push:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: wangyucode
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Extract version from Cargo.toml
+        id: extract_version
+        run: |
+          version=$(awk -F= '/^version/ {print $2}' Cargo.toml | tr -d '"')
+          echo "Version: $version"
+          echo "::set-output name=version::$version"
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: wangyucode/crane:latest,wangyucode/crane:${{ steps.extract_version.outputs.version }}

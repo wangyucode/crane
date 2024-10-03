@@ -18,11 +18,12 @@ Crane 是一个使用 Rust 编写的简单、快速且安全的工具，用于�
 
 ## 安装说明
 
+Crane 会将 `.tar.gz` 文件解压到 `/dist/` 目录下。所以在使用docker时，挂在你需要部署的host目录到容器的 `/dist/` 目录下即可。
 
 1. 使用 Docker
 
 ```bash
-docker run -e API_KEY={YOUR_SUPER_SECURE_API_KEY} -p 8594:8594 -v /dist_path_on_host/:/dist/ wangyucode/crane:0.1.0
+docker run -e API_KEY={YOUR_SUPER_SECURE_API_KEY} -p 8594:8594 -v /dist_path_on_host/:/dist/ wangyucode/crane:0.1.2
 ```
 
 2. 使用 docker-compose
@@ -30,7 +31,7 @@ docker run -e API_KEY={YOUR_SUPER_SECURE_API_KEY} -p 8594:8594 -v /dist_path_on_
 ```yaml
 services:
   crane:
-    image: wangyucode/crane:0.1.0
+    image: wangyucode/crane:0.1.2
     environment:
       - API_KEY={YOUR_SUPER_SECURE_API_KEY}
     ports:
@@ -39,7 +40,7 @@ services:
       - /dist_path_on_host/:/dist/
 ```
 
-3. 使用二进制文件
+3. 从源码构建
 ```
 git clone https://github.com/wangyucode/crane
 cargo build --release
@@ -50,7 +51,7 @@ cargo build --release
 ## 使用方法
 
 ```bash
-curl -H "X-Api-Key: {YOUR_SUPER_SECURE_API_KEY}" http://{your_server_address}:8594/?url=https://example.com/file.tar.gz
+curl -H "X-Api-Key: {YOUR_SUPER_SECURE_API_KEY}" http://{your_server_address}:8594/deploy?url=https://example.com/file.tar.gz
 ```
 
 因此，您可以在 CI/CD 管道中使用它。
@@ -64,13 +65,17 @@ jobs:
       ...
       - name: use Crane to deploy
         run: |
-          curl -H "X-Api-Key: ${{secrets.CRANE_API_KEY}}" http://${secrets.SERVER_ADDRESS}:8594/?url=https://github.com/your-repo/your-repo/releases/download/v1.0.0/dist.tar.gz
+          curl -H "X-Api-Key: ${{secrets.CRANE_API_KEY}}" http://${secrets.SERVER_ADDRESS}:8594/deploy?url=https://github.com/your-repo/your-repo/releases/download/v1.0.0/dist.tar.gz
       ...
 ```
 
-> **Waring**: 警告: API_KEY 是必需的，如果未设置，Crane 将无法启动。请将使用强密码。
+> **Waring**: 警告: `API_KEY` 是必需的，如果未设置，Crane 将无法启动。请使用强密码。
 
 ## 路线图
 
 - [ ] 当新的部署被触发时，取消上一个部署
 - [ ] 支持选项，覆盖标志
+
+## 其它选项
+
+如果你正在寻找一个github actions, 来使用服务器密钥通过 `sftp` 部署文件，你可以尝试 [wangyucode/sftp-upload-action](https://github.com/wangyucode/sftp-upload-action)
