@@ -1,8 +1,10 @@
-# Crane - Fast and Secure .tar.gz Deployment
+<div align="center">
+  <img src="logo.jpg" width=256></img>
+  <p><strong>Crane - Fast and Secure .tar.gz Deployment</strong></p>
 
-![Crane](logo.jpg)
+  English | [简体中文](README_Zh-CN.md)
 
-English | [简体中文](README_Zh-CN.md)
+</div>
 
 Crane is a simple, fast, and secure tool write in Rust for downloading and deploying your `.tar.gz` archive files without the need for server passwords or keys. It was designed to provide a quick and convenient way to deploy your software or files to a server without the usual complexities of authentication and authorization.
 
@@ -15,10 +17,12 @@ Crane is a simple, fast, and secure tool write in Rust for downloading and deplo
 
 ## Installation
 
+Crane will decompress the `.tar.gz` file to the `/dist/` directory. So when using Docker, just mount the host directory you want to deploy to the `/dist/` directory of the container.
+
 1. use Docker
 
 ```bash
-docker run -e API_KEY={YOUR_SUPER_SECURE_API_KEY} -p 8594:8594 -v /dist_path_on_host/:/dist/ wangyucode/crane:0.1.0
+docker run -e API_KEY={YOUR_SUPER_SECURE_API_KEY} -p 8594:8594 -v /dist_path_on_host/:/dist/ wangyucode/crane:0.1.2
 ```
 
 2. use docker-compose
@@ -26,7 +30,7 @@ docker run -e API_KEY={YOUR_SUPER_SECURE_API_KEY} -p 8594:8594 -v /dist_path_on_
 ```yaml
 services:
   crane:
-    image: wangyucode/crane:0.1.0
+    image: wangyucode/crane:0.1.2
     environment:
       - API_KEY={YOUR_SUPER_SECURE_API_KEY}
     ports:
@@ -46,7 +50,7 @@ cargo build --release
 ## Usage
 
 ```bash
-curl -H "X-Api-Key: {YOUR_SUPER_SECURE_API_KEY}" http://{your_server_address}:8594/?url=https://example.com/file.tar.gz
+curl -H "X-Api-Key: {YOUR_SUPER_SECURE_API_KEY}" http://{your_server_address}:8594/deploy?url=https://example.com/file.tar.gz
 ```
 
 so you can use it in your CI/CD pipeline. 
@@ -60,7 +64,7 @@ jobs:
       ...
       - name: use Crane to deploy
         run: |
-          curl -H "X-Api-Key: ${{secrets.CRANE_API_KEY}}" http://${secrets.SERVER_ADDRESS}:8594/?url=https://github.com/your-repo/your-repo/releases/download/v1.0.0/dist.tar.gz
+          curl -H "X-Api-Key: ${{secrets.CRANE_API_KEY}}" http://${secrets.SERVER_ADDRESS}:8594/deploy?url=https://github.com/your-repo/your-repo/releases/download/v1.0.0/dist.tar.gz
       ...
 ```
 
@@ -70,3 +74,7 @@ jobs:
 
 - [ ] Cancel last deployment when new deployment is triggered.
 - [ ] Support options, override flag.
+
+## Other Options
+
+If you're looking for a GitHub action to deploy files via `sftp` using server keys, you can try [wangyucode/sftp-upload-action](https://github.com/wangyucode/sftp-upload-action)
