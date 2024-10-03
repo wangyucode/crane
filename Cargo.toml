@@ -1,14 +1,21 @@
 [package]
 name = "crane"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
 actix-web = "4"
 serde = { version = "1.0.210", features = ["serde_derive"] }
-ureq = "2.10.1"
-libflate = "2.1.0"
+#ureq = "2.10.1"
+#libflate = "2.1.0"
 tokio = { version = "1", features = [] }
 tokio-stream = "0.1.16"
-tar = "0.4.42"
+# tar = "0.4.42"
 anyhow = "1.0.89"
+tokio-tar = "0.3.1"
+async-compression = { version = "0.4.13", features = ["tokio", "gzip"] }
+surf = "2.3.2"
+reqwest = { version = "0.12.8", features = ["stream"] }
+tokio-util = { version = "0.7.12", features = ["io"] }
+futures-util = "0.3.30"
+#async-tar = "0.5.0"

@@ -1,26 +1,36 @@
-use anyhow::Result;
-use libflate::gzip;
-use tokio::sync::mpsc::Sender;
+use std::path::Path;
 
-pub async fn deploy(tx: &Sender<String>, url: String) -> Result<()> {
+use anyhow::Error;
+use async_compression::tokio::bufread::GzipDecoder;
+use futures_util::TryStreamExt;
+use tokio::sync::mpsc::Sender;
+use tokio_stream::StreamExt;
+use tokio_util::io::StreamReader;
+
+pub async fn deploy(tx: &Sender<String>, url: String) -> Result<(), Error> {
     tx.send(format!("start deploy {url}\r\n")).await?;
-    let res = ureq::get(url.as_str()).call()?;
-    let gzip_decoder = gzip::Decoder::new(res.into_reader())?;
-    let mut tar_archive = tar::Archive::new(gzip_decoder);
-    for entry in tar_archive.entries()? {
-        let mut file = entry?;
-        let path = format!(
-            "/dist/{}",
-            file.header().path()?.as_os_str().to_str().unwrap()
-        );
-        let msg = format!("deploying: {:?}, size: {}\r\n", path, file.header().size()?);
-        println!("{msg}");
-        tx.send(msg.clone()).await?;
-        if let Some(parent) = file.path().unwrap().parent() {
-            std::fs::create_dir_all(parent)?;
+    let res = reqwest::get(url.as_str()).await?;
+
+    let stream = res.bytes_stream();
+    let stream_reader =
+        StreamReader::new(stream.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)));
+    let gzip_decoder = GzipDecoder::new(stream_reader);
+    // let async_stream = ReaderStream::new(gzip_decoder);
+    let mut tar_archive = tokio_tar::Archive::new(gzip_decoder);
+    let mut entries = tar_archive.entries()?;
+    
+    while let Some(entry) = entries.next().await {
+        let mut entry = entry?;
+        let path = format!("/dist/{}", entry.header().path()?.to_str().unwrap());
+        let path = Path::new(&path);
+        if entry.header().entry_type().is_dir() {
+            tx.send(format!("create dir: {path:?}\r\n")).await?;
+            tokio::fs::create_dir_all(path).await?;
+        } else  {
+            tx.send(format!("write file: {path:?}\r\n")).await?;
+            let mut file = tokio::fs::File::create(path).await?;
+            tokio::io::copy(&mut entry, &mut file).await?;
         }
-        let mut outfile = std::fs::File::create(&path)?;
-        std::io::copy(&mut file, &mut outfile)?;
     }
     tx.send("deploy success\r\n".to_string()).await?;
 

@@ -1,4 +1,4 @@
-use std::{env, net::SocketAddr};
+use std::{env, net::SocketAddr, time::{SystemTime, UNIX_EPOCH}};
 
 use actix_web::{
     get,
@@ -41,15 +41,19 @@ async fn deploy(req: HttpRequest) -> impl Responder {
         return HttpResponse::BadRequest().body("currently only .tar.gz files are supported");
     }
 
+    let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_secs();
+    println!("deploying triggered, url: {}, date: {}", url, timestamp);
     let (tx, rx) = mpsc::channel(1);
     let stream =
         ReceiverStream::new(rx).map(|msg: String| Ok::<web::Bytes, Error>(web::Bytes::from(msg)));
 
     tokio::spawn(async move {
         let result = deployer::deploy(&tx, url).await;
-        println!("{result:?}");
+        println!("deploy result: {result:?}");
         if result.is_err() {
-            eprintln!("{result:?}");
             tx.send(format!("Deployment failed: {result:?}"))
                 .await
                 .unwrap();
