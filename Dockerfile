@@ -4,7 +4,7 @@ COPY . .
 RUN cargo install --path .
 
 FROM debian:bullseye-slim
-RUN apt-get update && apt-get install ca-certificates && apt-get clean
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/crane /usr/local/bin/crane
 EXPOSE 8594
 CMD ["crane"]
