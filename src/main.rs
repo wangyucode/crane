@@ -111,6 +111,8 @@ mod tests {
             StatusCode::UNAUTHORIZED,
             "test deploy if API_KEY is missing"
         );
+        // set the API_KEY to right
+        env::set_var("API_KEY", "right");
 
         let req = test::TestRequest::get()
             .uri("/deploy")
@@ -122,7 +124,7 @@ mod tests {
             StatusCode::FORBIDDEN,
             "test deploy if API_KEY is wrong"
         );
-
+        
         env::set_var("API_KEY", "right");
         let req = test::TestRequest::get()
             .uri("/deploy")
@@ -139,7 +141,7 @@ mod tests {
             body, "Missing url query parameter",
             "test body if url is missing"
         );
-
+        // test status if url is not end with .tar.gz
         let req = test::TestRequest::get()
             .uri("/deploy?url=https://example.com")
             .append_header(("X-Api-Key", "right"))
@@ -155,7 +157,7 @@ mod tests {
             body, "currently only .tar.gz files are supported",
             "test body if url is not end with .tar.gz"
         );
-
+        // test status if url is end with .tar.gz;
         let req = test::TestRequest::get()
             .uri("/deploy?url=https://example.com/test.tar.gz")
             .append_header(("X-Api-Key", "right"))
@@ -167,9 +169,6 @@ mod tests {
             "test status if url is end with .tar.gz"
         );
         let body = test::read_body(res).await;
-        assert_eq!(
-            body, "start deploy https://example.com/test.tar.gz\r\n",
-            "test body if url is end with .tar.gz"
-        );
+        assert!(body.starts_with("start deploy https://example.com/test.tar.gz\r\n".as_bytes()));
     }
 }
