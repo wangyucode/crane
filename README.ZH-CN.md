@@ -1,7 +1,9 @@
 <div align="center">
   <img src="logo.jpg" width=256></img>
   <p><strong>Crane - 快速且安全的 .tar.gz 部署工具</strong></p>
+  
   [English](README.md) | 简体中文
+  
 </div>
 
 Crane 是一个使用 Rust 编写的简单、快速且安全的工具，用于下载和部署您的 `.tar.gz` 归档文件，无需服务器密码或密钥。
