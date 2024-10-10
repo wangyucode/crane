@@ -2,7 +2,7 @@
   <img src="logo.jpg" width=256></img>
   <p><strong>Crane - Fast and Secure .tar.gz Deployment</strong></p>
 
-  English | [简体中文](README_Zh-CN.md)
+  English | [简体中文](README.ZH-CN.md)
 
 </div>
 
